@@ -1,0 +1,946 @@
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H&amp;H Development | DHR &amp; Peninsula Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --black:#0a0a0a;--dark1:#111113;--dark2:#18181b;--dark3:#1e1e23;--dark4:#252530;
+  --gold:#b89a6e;--gold2:#d4b88a;--gold3:#f0d9b2;--text:#e8e4dd;--muted:#8a8680;
+  --border:rgba(184,154,110,0.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--black);color:var(--text);overflow-x:hidden;min-height:0}
+.screen{display:none}
+.screen.active{display:block}
+input[type=file]{display:none}
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+.hero{
+  background:url('https://cdn.prod.website-files.com/659fbf11b07c7a18d54a6cf9/66a3226cad17435dceca7d3b_main_bg.webp') center/cover no-repeat,#0b0c0e;
+  min-height:270px;position:relative;display:flex;flex-direction:column;justify-content:flex-end;
+  border-bottom:1px solid var(--border);overflow:hidden;
+}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,10,10,0.08) 0%,rgba(10,10,10,0.72) 100%)}
+.hero-content{position:relative;z-index:1;padding:32px 40px 28px}
+.hero-tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.hero-title{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:600;line-height:1.15;color:#fff;margin-bottom:6px}
+.hero-sub{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.hero-logo{position:absolute;top:24px;right:32px;z-index:2;font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--gold);letter-spacing:2px;font-weight:600}
+.hero-img-btn{position:absolute;bottom:12px;right:16px;z-index:2;background:rgba(184,154,110,0.12);border:1px solid var(--border);color:var(--gold2);font-size:10px;letter-spacing:1px;padding:5px 10px;cursor:pointer;border-radius:2px;transition:all 0.2s}
+.hero-img-btn:hover{background:rgba(184,154,110,0.25)}
+
+/* ── Landing ─────────────────────────────────────────────────────────── */
+#landing-screen{min-height:420px}
+.landing-btns{display:flex;gap:20px;padding:48px 40px;justify-content:center;flex-wrap:wrap}
+.landing-btn{display:flex;flex-direction:column;align-items:center;gap:14px;padding:36px 44px;border:1px solid var(--border);background:var(--dark2);cursor:pointer;transition:all 0.3s;min-width:210px;border-radius:2px}
+.landing-btn:hover{border-color:var(--gold);background:var(--dark3)}
+.landing-btn-icon{font-size:2.2rem}
+.landing-btn-label{font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold2)}
+.landing-btn-sub{font-size:11px;color:var(--muted);text-align:center;line-height:1.5}
+
+/* ── Upload ──────────────────────────────────────────────────────────── */
+#upload-screen{min-height:420px}
+.back-bar{padding:14px 24px;border-bottom:1px solid var(--border)}
+.back-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:4px 0;display:flex;align-items:center;gap:6px;transition:color 0.2s}
+.back-btn:hover{color:var(--gold2)}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:24px}
+.upload-zone{border:1px dashed var(--border);border-radius:2px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.3s;background:var(--dark2)}
+.upload-zone.dragover,.upload-zone.loaded{border-color:var(--gold);border-style:solid;background:rgba(184,154,110,0.05)}
+.uz-icon{font-size:2rem;margin-bottom:12px}
+.uz-label{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--gold2);margin-bottom:6px}
+.uz-hint{font-size:11px;color:var(--muted)}
+.uz-status{font-size:11px;color:var(--gold);margin-top:8px;font-weight:500;min-height:16px}
+.upload-actions{padding:4px 24px 28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.go-btn{background:var(--gold);color:var(--black);border:none;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:12px 28px;cursor:pointer;font-weight:600;border-radius:2px;transition:background 0.2s}
+.go-btn:hover:not(:disabled){background:var(--gold2)}
+.go-btn:disabled{opacity:0.4;cursor:not-allowed}
+.upload-note{font-size:11px;color:var(--muted)}
+
+/* ── Dashboard ───────────────────────────────────────────────────────── */
+.dash-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.dash-title{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--gold2)}
+.dash-meta{font-size:10px;color:var(--muted);margin-top:2px}
+.dash-actions{display:flex;gap:8px;flex-wrap:wrap}
+.act-btn{background:none;border:1px solid var(--border);color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:7px 13px;cursor:pointer;border-radius:2px;transition:all 0.2s;white-space:nowrap}
+.act-btn:hover{border-color:var(--gold);color:var(--gold2)}
+.act-btn.gold{background:rgba(184,154,110,0.12);border-color:var(--gold);color:var(--gold2)}
+.act-btn.gold:hover{background:rgba(184,154,110,0.25)}
+
+/* Tabs */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);padding:0 20px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{padding:14px 22px;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap}
+.tab.active{color:var(--gold2);border-bottom-color:var(--gold)}
+.tab:hover:not(.active){color:var(--text)}
+.tab-content{display:none;padding:24px}
+.tab-content.active{display:block}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi-card{background:var(--dark2);border:1px solid var(--border);border-radius:2px;padding:18px 16px}
+.kpi-card.hl{border-color:rgba(184,154,110,0.3);background:rgba(184,154,110,0.06)}
+.kv{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:600;color:var(--gold2);line-height:1}
+.kl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:6px}
+
+/* Type cards */
+.type-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.type-card{background:var(--dark3);border:1px solid var(--border);border-radius:2px;padding:16px}
+.tc-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.tc-total{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:600;color:var(--gold2);margin-bottom:8px}
+.prog-bar{height:3px;background:rgba(255,255,255,0.07);border-radius:2px;margin-bottom:5px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:2px;transition:width 0.6s}
+.tc-sub{font-size:10px;color:var(--muted);display:flex;justify-content:space-between}
+.pills{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}
+.pill{font-size:9px;padding:2px 6px;border-radius:10px;font-weight:500}
+
+/* Section */
+.sec-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.section-div{height:1px;background:var(--border);margin:18px 0}
+
+/* Charts */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.chart-card{background:var(--dark2);border:1px solid var(--border);border-radius:2px;padding:18px}
+.chart-card-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+.chart-wrap{position:relative;height:220px}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;margin-bottom:18px}
+.stbl{width:100%;border-collapse:collapse;font-size:12px}
+.stbl th{padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);border-bottom:1px solid var(--border);background:var(--dark3)}
+.stbl td{padding:9px 12px;border-bottom:1px solid rgba(184,154,110,0.07);color:var(--text)}
+.stbl tr:last-child td{border-bottom:none}
+.stbl tr:hover td{background:rgba(184,154,110,0.04)}
+.stbl td.num,.stbl th.num{text-align:right}
+.stbl td.num{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--gold2)}
+
+/* Planned */
+.plan-box{background:rgba(184,154,110,0.07);border:1px solid rgba(184,154,110,0.22);border-radius:2px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;gap:32px;flex-wrap:wrap}
+.plan-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
+.plan-val{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:600;color:var(--gold2);line-height:1}
+.plan-sub{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* Status legend */
+.sleg{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.sleg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
+.sleg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Comparison */
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.cmp-card{background:var(--dark2);border:1px solid var(--border);border-radius:2px;padding:20px}
+.cmp-title{font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:var(--gold2);margin-bottom:16px}
+.cmp-kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.cmp-kv{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:600;line-height:1}
+.cmp-kl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:3px}
+
+/* Empty */
+.empty{text-align:center;padding:52px 24px;color:var(--muted);font-size:12px;font-style:italic}
+.empty a{color:var(--gold);text-decoration:none}
+
+/* Responsive */
+@media(max-width:720px){
+  .hero-content{padding:24px 20px 20px}
+  .hero-title{font-size:1.7rem}
+  .hero-logo{font-size:1.1rem;top:16px;right:20px}
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .type-row{grid-template-columns:1fr}
+  .charts-row{grid-template-columns:1fr}
+  .cmp-grid{grid-template-columns:1fr}
+  .upload-grid{grid-template-columns:1fr}
+  .landing-btns{flex-direction:column;padding:28px 20px}
+  .tab-content{padding:16px}
+  .dash-header{padding:12px 16px}
+  .tab-bar{padding:0 10px}
+}
+</style>
+<script>window.__SNAPSHOT__={"dhr":{"proj":"dhr","summary":{"total":{"sd":187,"ms":3,"ts":3},"submitted":{"sd":187,"ms":3,"ts":3},"ur":{"sd":161,"ms":3,"ts":3},"a":{"sd":24,"ms":0,"ts":0},"b":{"sd":2,"ms":0,"ts":0},"c":{"sd":0,"ms":0,"ts":0},"d":{"sd":0,"ms":0,"ts":0},"e":{"sd":0,"ms":0,"ts":0},"plan":{"sd":0,"ms":0,"ts":0}},"dwg":{"byStatus":{"UR":161,"A":24,"B":2},"byArea":{"AREA 3":82,"AREA 1":105},"total":187},"material":{"byStatus":{"UR":3},"bySystem":{"ACS":1,"CCTV":1,"GB":1},"total":3},"technical":{"byStatus":{"UR":3},"bySystem":{"ACS":1,"CCTV":1,"GB":1},"total":3},"requests":{"total":1,"byStatus":{"SUBMITTED":1}}},"pen":{"proj":"pen","summary":{"total":{"sd":85,"ms":8,"ts":13},"submitted":{"sd":85,"ms":8,"ts":8},"ur":{"sd":7,"ms":0,"ts":1},"a":{"sd":0,"ms":0,"ts":0},"b":{"sd":69,"ms":8,"ts":7},"c":{"sd":3,"ms":0,"ts":0},"d":{"sd":6,"ms":0,"ts":0},"e":{"sd":0,"ms":0,"ts":0},"plan":{"sd":0,"ms":0,"ts":0}},"dwg":{"byStatus":{"B":69,"UR":7,"D":6,"C":3},"byArea":{},"total":85},"material":{"byStatus":{"B":8},"bySystem":{"SCS":1,"ICT":1,"CCTV":1,"ACS":1,"DTA":1,"PMS":1,"Sec. Intercom":1,"GB":1},"total":8},"technical":{"byStatus":{"B":7,"UR":1,"P":5},"bySystem":{"CCTV":2,"ACS":2,"ICT":2,"SCS":1,"DTA":1,"Sec. Intercom":1,"PMS":2,"GB":1,"WIFI":1},"total":13},"requests":{"total":0,"byStatus":{}}},"meta":{"at":"2026-06-22T07:08:19.155Z","hero":null}};</script></head>
+<body>
+
+<!-- ═══════════════ LANDING ═══════════════ -->
+<div id="landing-screen" class="screen">
+  <div id="hero-l" class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-logo">H&amp;H</div>
+    <div class="hero-content">
+      <div class="hero-tag">Document Submission Tracker</div>
+      <div class="hero-title">Project Overview<br>Dashboard</div>
+      <div class="hero-sub">DHR &amp; Peninsula Projects</div>
+    </div>
+    <label class="hero-img-btn" for="heroImg-l">📷 Change Image</label>
+    <input type="file" id="heroImg-l" accept="image/*" onchange="setHeroImage(event)">
+  </div>
+  <div class="landing-btns">
+    <div class="landing-btn" onclick="showDashboard()">
+      <div class="landing-btn-icon">📊</div>
+      <div class="landing-btn-label">Access Dashboard</div>
+      <div class="landing-btn-sub">View previously loaded project data</div>
+    </div>
+    <div class="landing-btn" onclick="showUpload()">
+      <div class="landing-btn-icon">📁</div>
+      <div class="landing-btn-label">Upload Documents</div>
+      <div class="landing-btn-sub">Load DHR &amp; Peninsula tracker files</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ UPLOAD ═══════════════ -->
+<div id="upload-screen" class="screen">
+  <div id="hero-u" class="hero" style="min-height:180px">
+    <div class="hero-overlay"></div>
+    <div class="hero-logo">H&amp;H</div>
+    <div class="hero-content">
+      <div class="hero-tag">Upload Tracker Files</div>
+      <div class="hero-title" style="font-size:1.6rem">Load Project Data</div>
+    </div>
+  </div>
+  <div class="back-bar">
+    <button class="back-btn" onclick="showLanding()">← Back to Home</button>
+  </div>
+  <div class="upload-grid">
+    <div class="upload-zone loaded" id="zone-dhr" onclick="document.getElementById('file-dhr').click()" ondragover="onDragOver(event,'dhr')" ondragleave="onDragLeave('dhr')" ondrop="onDrop(event,'dhr')">
+      <div class="uz-icon">🏗️</div>
+      <div class="uz-label">DHR-Tracker</div>
+      <div class="uz-hint">DHR-Tracker.xlsx</div>
+      <div class="uz-status" id="stat-dhr">✓ DHR-Tracker.xlsx</div>
+      <input type="file" id="file-dhr" accept=".xlsx,.xls" onchange="handleFile(event,'dhr')">
+    </div>
+    <div class="upload-zone loaded" id="zone-pen" onclick="document.getElementById('file-pen').click()" ondragover="onDragOver(event,'pen')" ondragleave="onDragLeave('pen')" ondrop="onDrop(event,'pen')">
+      <div class="uz-icon">🏢</div>
+      <div class="uz-label">Peninsula-Tracker</div>
+      <div class="uz-hint">Peninsula-Tracker.xlsx</div>
+      <div class="uz-status" id="stat-pen">✓ Peninsula-Tracker.xlsx</div>
+      <input type="file" id="file-pen" accept=".xlsx,.xls" onchange="handleFile(event,'pen')">
+    </div>
+  </div>
+  <div class="upload-actions">
+    <button class="go-btn" id="go-btn" onclick="showDashboard()">View Dashboard</button>
+    <span class="upload-note" id="upload-note">Ready — click to view dashboard</span>
+  </div>
+</div>
+
+<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<div id="dashboard-screen" class="screen active">
+  <div id="hero-d" class="hero" style="min-height:230px">
+    <div class="hero-overlay"></div>
+    <div class="hero-logo">H&amp;H</div>
+    <div class="hero-content">
+      <div class="hero-tag">Live Project Dashboard</div>
+      <div class="hero-title" style="font-size:1.9rem">Document Submission<br>Status Tracker</div>
+      <div class="hero-sub" id="dash-date">As of Monday, 22 June 2026</div>
+    </div>
+    <label class="hero-img-btn" for="heroImg-d">📷 Change Image</label>
+    <input type="file" id="heroImg-d" accept="image/*" onchange="setHeroImage(event)">
+  </div>
+
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">DHR &amp; Peninsula Projects</div>
+      <div class="dash-meta" id="dash-meta">DHR: DHR-Tracker.xlsx · Peninsula: Peninsula-Tracker.xlsx</div>
+    </div>
+    <div class="dash-actions">
+      <button class="act-btn" onclick="showUpload()">↑ Re-upload</button>
+      <button class="act-btn" onclick="showLanding()">← Home</button>
+      <button class="act-btn gold" onclick="downloadSharedHTML()">⬇ Download &amp; Share</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active" id="tab-dhr" onclick="switchTab('dhr')" style="opacity: 1;">DHR Project</div>
+    <div class="tab" id="tab-pen" onclick="switchTab('pen')" style="opacity: 1;">Peninsula Project</div>
+    <div class="tab" id="tab-cmp" onclick="switchTab('cmp')">Comparison</div>
+  </div>
+
+  <div id="tc-dhr" class="tab-content active"><div class="kpi-row">
+    <div class="kpi-card hl"><div class="kv">187</div><div class="kl">Shop Drawings</div></div>
+    <div class="kpi-card hl"><div class="kv">3</div><div class="kl">Material Submittals</div></div>
+    <div class="kpi-card hl"><div class="kv">3</div><div class="kl">Technical Submittals</div></div>
+    <div class="kpi-card"><div class="kv">193</div><div class="kl">Total Documents</div></div>
+  </div><div class="type-row">
+    <div class="type-card">
+    <div class="tc-title">Shop Drawings</div>
+    <div class="tc-total">187</div>
+    <div class="prog-bar"><div class="prog-fill" style="width:14%"></div></div>
+    <div class="tc-sub"><span>14% complete</span><span>26/187</span></div>
+    <div class="pills"><span class="pill" style="background:rgba(34,197,94,0.18);color:#22c55e">A: 24</span><span class="pill" style="background:rgba(184,154,110,0.2);color:#b89a6e">B: 2</span><span class="pill" style="background:rgba(59,130,246,0.18);color:#3b82f6">UR: 161</span></div>
+  </div>
+    <div class="type-card">
+    <div class="tc-title">Material Submittals</div>
+    <div class="tc-total">3</div>
+    <div class="prog-bar"><div class="prog-fill" style="width:0%"></div></div>
+    <div class="tc-sub"><span>0% complete</span><span>0/3</span></div>
+    <div class="pills"><span class="pill" style="background:rgba(59,130,246,0.18);color:#3b82f6">UR: 3</span></div>
+  </div>
+    <div class="type-card">
+    <div class="tc-title">Technical Submittals</div>
+    <div class="tc-total">3</div>
+    <div class="prog-bar"><div class="prog-fill" style="width:0%"></div></div>
+    <div class="tc-sub"><span>0% complete</span><span>0/3</span></div>
+    <div class="pills"><span class="pill" style="background:rgba(59,130,246,0.18);color:#3b82f6">UR: 3</span></div>
+  </div>
+  </div><div class="sec-title">Status Breakdown</div>
+  <div class="sleg">
+    <span class="sleg-item"><span class="sleg-dot" style="background:#22c55e"></span>A = Approved</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#b89a6e"></span>B = Approved as Noted</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#3b82f6"></span>UR = Under Review</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#eab308"></span>C = Revise &amp; Resubmit</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#ef4444"></span>D = Rejected</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#8b5cf6"></span>P = Pending</span>
+  </div>
+  <div class="tbl-wrap"><table class="stbl">
+    <thead><tr>
+      <th>Status</th>
+      <th class="num">Shop Drawings</th>
+      <th class="num">Material Submittals</th>
+      <th class="num">Technical Submittals</th>
+    </tr></thead>
+    <tbody><tr>
+      <td style="font-weight:600;color:var(--gold2)">Total Submittals</td>
+      <td class="num" style="color:var(--gold2)">187</td>
+      <td class="num" style="color:var(--gold2)">3</td>
+      <td class="num" style="color:var(--gold2)">3</td>
+    </tr><tr>
+      <td style="color:var(--muted)">Total Submitted</td>
+      <td class="num" style="color:var(--muted)">187</td>
+      <td class="num" style="color:var(--muted)">3</td>
+      <td class="num" style="color:var(--muted)">3</td>
+    </tr><tr>
+      <td style="color:#86efac">Approved</td>
+      <td class="num" style="color:#86efac">24</td>
+      <td class="num" style="color:#86efac">—</td>
+      <td class="num" style="color:#86efac">—</td>
+    </tr><tr>
+      <td style="color:#d4b88a">Approved as Noted</td>
+      <td class="num" style="color:#d4b88a">2</td>
+      <td class="num" style="color:#d4b88a">—</td>
+      <td class="num" style="color:#d4b88a">—</td>
+    </tr><tr>
+      <td style="color:#93c5fd">Under Review</td>
+      <td class="num" style="color:#93c5fd">161</td>
+      <td class="num" style="color:#93c5fd">3</td>
+      <td class="num" style="color:#93c5fd">3</td>
+    </tr></tbody>
+  </table></div><div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-card-title">Shop Drawings — Status Distribution</div>
+      <div class="chart-wrap"><canvas id="ch-dhr-dwg" height="275" style="display: block; box-sizing: border-box; height: 220px; width: 942px;" width="1178"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">DWG Schedule by Area</div>
+      <div class="chart-wrap"><canvas id="ch-dhr-area" height="275" style="display: block; box-sizing: border-box; height: 220px; width: 942px;" width="1178"></canvas></div>
+    </div>
+  </div><div class="sec-title">Common Requests</div>
+    <div class="kpi-row" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr))">
+      <div class="kpi-card hl"><div class="kv">1</div><div class="kl">Total Requests</div></div>
+      <div class="kpi-card"><div class="kv" style="color:var(--gold2)">1</div><div class="kl">SUBMITTED</div></div>
+    </div></div>
+  <div id="tc-pen" class="tab-content"><div class="kpi-row">
+    <div class="kpi-card hl"><div class="kv">85</div><div class="kl">Shop Drawings</div></div>
+    <div class="kpi-card hl"><div class="kv">8</div><div class="kl">Material Submittals</div></div>
+    <div class="kpi-card hl"><div class="kv">13</div><div class="kl">Method Statements (MSRA)</div></div>
+    <div class="kpi-card"><div class="kv">106</div><div class="kl">Total Documents</div></div>
+  </div><div class="type-row">
+    <div class="type-card">
+    <div class="tc-title">Shop Drawings</div>
+    <div class="tc-total">85</div>
+    <div class="prog-bar"><div class="prog-fill" style="width:81%"></div></div>
+    <div class="tc-sub"><span>81% complete</span><span>69/85</span></div>
+    <div class="pills"><span class="pill" style="background:rgba(184,154,110,0.2);color:#b89a6e">B: 69</span><span class="pill" style="background:rgba(59,130,246,0.18);color:#3b82f6">UR: 7</span><span class="pill" style="background:rgba(234,179,8,0.18);color:#eab308">C: 3</span><span class="pill" style="background:rgba(239,68,68,0.18);color:#ef4444">D: 6</span></div>
+  </div>
+    <div class="type-card">
+    <div class="tc-title">Material Submittals</div>
+    <div class="tc-total">8</div>
+    <div class="prog-bar"><div class="prog-fill" style="width:100%"></div></div>
+    <div class="tc-sub"><span>100% complete</span><span>8/8</span></div>
+    <div class="pills"><span class="pill" style="background:rgba(184,154,110,0.2);color:#b89a6e">B: 8</span></div>
+  </div>
+    <div class="type-card">
+    <div class="tc-title">Method Statements (MSRA)</div>
+    <div class="tc-total">13</div>
+    <div class="prog-bar"><div class="prog-fill" style="width:54%"></div></div>
+    <div class="tc-sub"><span>54% complete</span><span>7/13</span></div>
+    <div class="pills"><span class="pill" style="background:rgba(184,154,110,0.2);color:#b89a6e">B: 7</span><span class="pill" style="background:rgba(59,130,246,0.18);color:#3b82f6">UR: 1</span></div>
+  </div>
+  </div><div class="sec-title">Status Breakdown</div>
+  <div class="sleg">
+    <span class="sleg-item"><span class="sleg-dot" style="background:#22c55e"></span>A = Approved</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#b89a6e"></span>B = Approved as Noted</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#3b82f6"></span>UR = Under Review</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#eab308"></span>C = Revise &amp; Resubmit</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#ef4444"></span>D = Rejected</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#8b5cf6"></span>P = Pending</span>
+  </div>
+  <div class="tbl-wrap"><table class="stbl">
+    <thead><tr>
+      <th>Status</th>
+      <th class="num">Shop Drawings</th>
+      <th class="num">Material Submittals</th>
+      <th class="num">Method Statements (MSRA)</th>
+    </tr></thead>
+    <tbody><tr>
+      <td style="font-weight:600;color:var(--gold2)">Total Submittals</td>
+      <td class="num" style="color:var(--gold2)">85</td>
+      <td class="num" style="color:var(--gold2)">8</td>
+      <td class="num" style="color:var(--gold2)">13</td>
+    </tr><tr>
+      <td style="color:var(--muted)">Total Submitted</td>
+      <td class="num" style="color:var(--muted)">85</td>
+      <td class="num" style="color:var(--muted)">8</td>
+      <td class="num" style="color:var(--muted)">8</td>
+    </tr><tr>
+      <td style="color:#d4b88a">Approved as Noted</td>
+      <td class="num" style="color:#d4b88a">69</td>
+      <td class="num" style="color:#d4b88a">8</td>
+      <td class="num" style="color:#d4b88a">7</td>
+    </tr><tr>
+      <td style="color:#93c5fd">Under Review</td>
+      <td class="num" style="color:#93c5fd">7</td>
+      <td class="num" style="color:#93c5fd">—</td>
+      <td class="num" style="color:#93c5fd">1</td>
+    </tr><tr>
+      <td style="color:#fde047">Revise &amp; Resubmit</td>
+      <td class="num" style="color:#fde047">3</td>
+      <td class="num" style="color:#fde047">—</td>
+      <td class="num" style="color:#fde047">—</td>
+    </tr><tr>
+      <td style="color:#fca5a5">Rejected / Not Approved</td>
+      <td class="num" style="color:#fca5a5">6</td>
+      <td class="num" style="color:#fca5a5">—</td>
+      <td class="num" style="color:#fca5a5">—</td>
+    </tr></tbody>
+  </table></div><div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-card-title">Shop Drawings — Status Distribution</div>
+      <div class="chart-wrap"><canvas id="ch-pen-dwg" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">Material &amp; Technical by System</div>
+      <div class="chart-wrap"><canvas id="ch-pen-area" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+    </div>
+  </div></div>
+  <div id="tc-cmp" class="tab-content"><div class="sec-title">Project Comparison</div><div class="cmp-grid"><div class="cmp-card">
+      <div class="cmp-title">DHR Project</div>
+      <div class="cmp-kpis">
+        <div><div class="cmp-kv" style="color:var(--gold2)">193</div><div class="cmp-kl">Total Docs</div></div>
+        <div><div class="cmp-kv" style="color:#22c55e">26</div><div class="cmp-kl">Approved (A+B)</div></div>
+        <div><div class="cmp-kv" style="color:#3b82f6">167</div><div class="cmp-kl">Under Review</div></div>
+        <div><div class="cmp-kv" style="color:var(--gold)">13%</div><div class="cmp-kl">Completion</div></div>
+      </div>
+      <div class="prog-bar" style="height:5px"><div class="prog-fill" style="width:13%"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">26 of 193 documents approved</div>
+    </div><div class="cmp-card">
+      <div class="cmp-title">Peninsula Project</div>
+      <div class="cmp-kpis">
+        <div><div class="cmp-kv" style="color:var(--gold2)">106</div><div class="cmp-kl">Total Docs</div></div>
+        <div><div class="cmp-kv" style="color:#22c55e">84</div><div class="cmp-kl">Approved (A+B)</div></div>
+        <div><div class="cmp-kv" style="color:#3b82f6">8</div><div class="cmp-kl">Under Review</div></div>
+        <div><div class="cmp-kv" style="color:var(--gold)">79%</div><div class="cmp-kl">Completion</div></div>
+      </div>
+      <div class="prog-bar" style="height:5px"><div class="prog-fill" style="width:79%"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">84 of 106 documents approved</div>
+    </div></div>
+  <div class="chart-card">
+    <div class="chart-card-title">Side-by-Side Document Count</div>
+    <div class="chart-wrap" style="height:280px"><canvas id="ch-cmp" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+  </div></div>
+</div>
+
+<script>
+// ─── Constants ────────────────────────────────────────────────────────────────
+const S_LABEL={UR:'Under Review',A:'Approved',B:'Approved as Noted',C:'Revise & Resubmit',D:'Rejected',E:'Returned Unchecked',P:'Pending'};
+const S_COLOR={UR:'#3b82f6',A:'#22c55e',B:'#b89a6e',C:'#eab308',D:'#ef4444',E:'#6b7280',P:'#8b5cf6'};
+const S_BG={UR:'rgba(59,130,246,0.18)',A:'rgba(34,197,94,0.18)',B:'rgba(184,154,110,0.2)',C:'rgba(234,179,8,0.18)',D:'rgba(239,68,68,0.18)',E:'rgba(107,114,128,0.18)',P:'rgba(139,92,246,0.18)'};
+const S_ORDER=['A','B','UR','C','D','E','P'];
+const EMPTY_SUM=()=>({total:{sd:0,ms:0,ts:0},submitted:{sd:0,ms:0,ts:0},ur:{sd:0,ms:0,ts:0},a:{sd:0,ms:0,ts:0},b:{sd:0,ms:0,ts:0},c:{sd:0,ms:0,ts:0},d:{sd:0,ms:0,ts:0},e:{sd:0,ms:0,ts:0},plan:{sd:0,ms:0,ts:0}});
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let dhrData=null,penData=null,customHeroImage=null,charts={},uploadMeta={};
+
+// ─── Navigation ──────────────────────────────────────────────────────────────
+function showLanding(){activate('landing-screen')}
+function showUpload(){activate('upload-screen')}
+function showDashboard(){
+  if(!dhrData&&!penData){showUpload();return;}
+  renderDashboard();
+  activate('dashboard-screen');
+}
+function activate(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(customHeroImage) applyHero();
+}
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  document.getElementById('tc-'+t).classList.add('active');
+  setTimeout(()=>Object.values(charts).forEach(c=>{try{c.resize()}catch(e){}}),60);
+}
+
+// ─── Hero image ───────────────────────────────────────────────────────────────
+function setHeroImage(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{customHeroImage=e.target.result;applyHero();};
+  r.readAsDataURL(f);
+}
+function applyHero(){
+  ['hero-l','hero-u','hero-d'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.style.backgroundImage=`url('${customHeroImage}')`;el.style.backgroundSize='cover';el.style.backgroundPosition='center';}
+  });
+}
+
+// ─── Upload handlers ──────────────────────────────────────────────────────────
+function onDragOver(e,z){e.preventDefault();document.getElementById('zone-'+z).classList.add('dragover')}
+function onDragLeave(z){document.getElementById('zone-'+z).classList.remove('dragover')}
+function onDrop(e,z){e.preventDefault();onDragLeave(z);readFile(e.dataTransfer.files[0],z)}
+function handleFile(e,z){readFile(e.target.files[0],z)}
+function readFile(file,z){
+  if(!file)return;
+  document.getElementById('stat-'+z).textContent='Reading…';
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      if(z==='dhr') dhrData=parseProject(wb,'dhr');
+      else penData=parseProject(wb,'pen');
+      uploadMeta[z]={name:file.name,time:new Date().toLocaleString()};
+      document.getElementById('stat-'+z).textContent='✓ '+file.name;
+      document.getElementById('zone-'+z).classList.add('loaded');
+      updateGoBtn();
+    }catch(err){
+      document.getElementById('stat-'+z).textContent='⚠ Error: '+err.message;
+      console.error(err);
+    }
+  };
+  r.readAsArrayBuffer(file);
+}
+function updateGoBtn(){
+  const ok=!!(dhrData||penData);
+  document.getElementById('go-btn').disabled=!ok;
+  document.getElementById('upload-note').textContent=ok?'Ready — click to view dashboard':'Upload at least one file to continue';
+}
+
+// ─── Parsers ──────────────────────────────────────────────────────────────────
+function parseProject(wb,proj){
+  return {
+    proj,
+    summary:parseSummary(wb.Sheets['Summary']),
+    dwg:parseDWGLog(wb.Sheets['DWG Schedule'], proj==='dhr'),
+    material:parseItemSheet(wb.Sheets['Material Submittal']),
+    technical:parseItemSheet(wb.Sheets[proj==='dhr'?'Technical Submittal':'MSRA']),
+    requests:proj==='dhr'?parseRequests(wb.Sheets['DHR Common Requests']):{total:0,byStatus:{}}
+  };
+}
+
+function parseSummary(ws){
+  if(!ws)return EMPTY_SUM();
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  const res=EMPTY_SUM();
+  let dStart=-1;
+  for(let i=0;i<rows.length;i++){
+    const v=String(rows[i][1]).toLowerCase();
+    if(v.includes('details')||v.includes('shop draw')){dStart=i+1;break;}
+  }
+  if(dStart<0)return res;
+  // Order matters: most-specific labels first to avoid substring collisions
+  const MAP=[
+    ['planned submission','plan'],
+    ['not approved','d'],       // before 'approved' — 'not approved,resubmit' must not match 'approved'
+    ['approved as noted','b'],  // before 'approved'
+    ['approved','a'],
+    ['total submitted','submitted'],
+    ['total submittal','total'],
+    ['under review','ur'],
+    ['revise and','c'],
+    ['rejected','d'],
+    ['returned unchecked','e'],
+  ];
+  for(let i=dStart;i<Math.min(dStart+15,rows.length);i++){
+    const lbl=String(rows[i][1]).toLowerCase().trim();
+    if(!lbl)continue;
+    for(const[k,v]of MAP){
+      if(lbl.includes(k)){
+        res[v].sd=Number(rows[i][2])||0;
+        res[v].ms=Number(rows[i][3])||0;
+        res[v].ts=Number(rows[i][4])||0;
+        break;
+      }
+    }
+  }
+  return res;
+}
+
+function parseDWGLog(ws,hasArea){
+  if(!ws)return{byStatus:{},byArea:{},total:0};
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  if(!rows.length)return{byStatus:{},byArea:{},total:0};
+  const hdrs=rows[0].map(h=>String(h).toLowerCase().trim());
+  const sCol=hdrs.findIndex(h=>h==='status');
+  const aCol=hasArea?hdrs.findIndex(h=>h==='area'):-1;
+  const byStatus={},byArea={};let total=0;
+  for(let i=1;i<rows.length;i++){
+    const sn=String(rows[i][0]).trim();
+    if(!sn||isNaN(Number(sn))||Number(sn)<1)continue;
+    const st=String(rows[i][sCol]||'').trim().toUpperCase();
+    const ar=aCol>=0?String(rows[i][aCol]||'').trim():'';
+    if(st){byStatus[st]=(byStatus[st]||0)+1;total++;}
+    if(ar)byArea[ar]=(byArea[ar]||0)+1;
+  }
+  return{byStatus,byArea,total};
+}
+
+function parseItemSheet(ws){
+  if(!ws)return{byStatus:{},bySystem:{},total:0};
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  if(!rows.length)return{byStatus:{},bySystem:{},total:0};
+  const hdrs=rows[0].map(h=>String(h).toLowerCase().trim());
+  const sCol=hdrs.findIndex(h=>h==='status');
+  const syCol=hdrs.findIndex(h=>h.includes('system'));
+  const byStatus={},bySystem={};let total=0;
+  for(let i=1;i<rows.length;i++){
+    const no=String(rows[i][0]).trim();
+    if(!no||isNaN(Number(no))||Number(no)<1)continue;
+    const st=String(rows[i][sCol]||'').trim().toUpperCase();
+    const sy=String(rows[i][syCol]||'').trim();
+    if(st){byStatus[st]=(byStatus[st]||0)+1;total++;}
+    if(sy)bySystem[sy]=(bySystem[sy]||0)+1;
+  }
+  return{byStatus,bySystem,total};
+}
+
+function parseRequests(ws){
+  if(!ws)return{total:0,byStatus:{}};
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  if(!rows.length)return{total:0,byStatus:{}};
+  const hdrs=rows[0].map(h=>String(h).toLowerCase().trim());
+  const sCol=hdrs.findIndex(h=>h==='status');
+  const byStatus={};let total=0;
+  for(let i=1;i<rows.length;i++){
+    const no=String(rows[i][0]).trim();
+    if(!no||isNaN(Number(no))||Number(no)<1)continue;
+    const st=String(rows[i][sCol]||'').trim().toUpperCase();
+    if(st){byStatus[st]=(byStatus[st]||0)+1;total++;}
+  }
+  return{total,byStatus};
+}
+
+// ─── Rendering ────────────────────────────────────────────────────────────────
+function renderDashboard(){
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});
+  charts={};
+
+  const now=new Date();
+  document.getElementById('dash-date').textContent='As of '+now.toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const parts=[];
+  if(dhrData&&uploadMeta.dhr) parts.push('DHR: '+uploadMeta.dhr.name);
+  if(penData&&uploadMeta.pen) parts.push('Peninsula: '+uploadMeta.pen.name);
+  document.getElementById('dash-meta').textContent=parts.join(' · ')||'Data loaded';
+
+  renderProjectTab('dhr',dhrData,'DHR Project','Technical Submittals','DWG Schedule by Area');
+  renderProjectTab('pen',penData,'Peninsula Project','Method Statements (MSRA)','Material & Technical by System');
+  renderComparison();
+
+  // Dim tabs without data
+  document.getElementById('tab-dhr').style.opacity=dhrData?'1':'0.45';
+  document.getElementById('tab-pen').style.opacity=penData?'1':'0.45';
+
+  if(!dhrData&&penData) switchTab('pen'); else switchTab('dhr');
+
+  if(window.ResizeObserver){
+    const obs=new ResizeObserver(()=>Object.values(charts).forEach(c=>{try{c.resize()}catch(e){}}));
+    obs.observe(document.body);
+  }
+}
+
+function renderProjectTab(proj,data,projLabel,techLabel,areaChartTitle){
+  const cont=document.getElementById('tc-'+proj);
+  if(!data){
+    cont.innerHTML=`<div class="empty">No data loaded for ${projLabel}. <a href="#" onclick="showUpload();return false">Upload file →</a></div>`;
+    return;
+  }
+  const s=data.summary;
+  const totalAll=s.total.sd+s.total.ms+s.total.ts;
+  const approved=(s.a.sd+s.a.ms+s.a.ts)+(s.b.sd+s.b.ms+s.b.ts);
+  const urAll=s.ur.sd+s.ur.ms+s.ur.ts;
+  const planAll=s.plan.sd+s.plan.ms+s.plan.ts;
+  const isDHR=proj==='dhr';
+
+  // ── KPI row
+  let html=`<div class="kpi-row">
+    <div class="kpi-card hl"><div class="kv">${s.total.sd}</div><div class="kl">Shop Drawings</div></div>
+    <div class="kpi-card hl"><div class="kv">${s.total.ms}</div><div class="kl">Material Submittals</div></div>
+    <div class="kpi-card hl"><div class="kv">${s.total.ts}</div><div class="kl">${techLabel}</div></div>
+    <div class="kpi-card"><div class="kv">${totalAll}</div><div class="kl">Total Documents</div></div>
+  </div>`;
+
+  // ── Type cards
+  html+=`<div class="type-row">
+    ${typeCard('Shop Drawings',s,'sd')}
+    ${typeCard('Material Submittals',s,'ms')}
+    ${typeCard(techLabel,s,'ts')}
+  </div>`;
+
+  // ── Planned this week
+  if(planAll>0){
+    html+=`<div class="plan-box">
+      <div><div class="plan-title">📅 Planned — This Week</div></div>
+      ${s.plan.sd>0?`<div><div class="plan-val">${s.plan.sd}</div><div class="plan-sub">Shop Drawings</div></div>`:''}
+      ${s.plan.ms>0?`<div><div class="plan-val">${s.plan.ms}</div><div class="plan-sub">Material Submittals</div></div>`:''}
+      ${s.plan.ts>0?`<div><div class="plan-val">${s.plan.ts}</div><div class="plan-sub">${techLabel}</div></div>`:''}
+    </div>`;
+  }
+
+  // ── Status legend + table
+  html+=`<div class="sec-title">Status Breakdown</div>
+  <div class="sleg">
+    <span class="sleg-item"><span class="sleg-dot" style="background:#22c55e"></span>A = Approved</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#b89a6e"></span>B = Approved as Noted</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#3b82f6"></span>UR = Under Review</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#eab308"></span>C = Revise & Resubmit</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#ef4444"></span>D = Rejected</span>
+    <span class="sleg-item"><span class="sleg-dot" style="background:#8b5cf6"></span>P = Pending</span>
+  </div>
+  <div class="tbl-wrap"><table class="stbl">
+    <thead><tr>
+      <th>Status</th>
+      <th class="num">Shop Drawings</th>
+      <th class="num">Material Submittals</th>
+      <th class="num">${techLabel}</th>
+    </tr></thead>
+    <tbody>${summaryRows(s,techLabel)}</tbody>
+  </table></div>`;
+
+  // ── Charts
+  html+=`<div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-card-title">Shop Drawings — Status Distribution</div>
+      <div class="chart-wrap"><canvas id="ch-${proj}-dwg"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">${areaChartTitle}</div>
+      <div class="chart-wrap"><canvas id="ch-${proj}-area"></canvas></div>
+    </div>
+  </div>`;
+
+  // ── Common Requests (DHR only)
+  if(isDHR&&data.requests.total>0){
+    const r=data.requests;
+    html+=`<div class="sec-title">Common Requests</div>
+    <div class="kpi-row" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr))">
+      <div class="kpi-card hl"><div class="kv">${r.total}</div><div class="kl">Total Requests</div></div>
+      ${Object.entries(r.byStatus).map(([st,n])=>`<div class="kpi-card"><div class="kv" style="color:${S_COLOR[st]||'var(--gold2)'}">${n}</div><div class="kl">${S_LABEL[st]||st}</div></div>`).join('')}
+    </div>`;
+  }
+
+  cont.innerHTML=html;
+
+  // DWG status doughnut
+  renderDonut('ch-'+proj+'-dwg', data.dwg.byStatus, proj+'-dwg');
+
+  // Area / system bar chart
+  if(isDHR&&Object.keys(data.dwg.byArea).length>0){
+    renderBar('ch-'+proj+'-area', data.dwg.byArea, proj+'-area', 'Drawings');
+  } else {
+    // Combine material + technical by system
+    const combined={};
+    Object.entries(data.material.bySystem).forEach(([k,v])=>{combined[k]=(combined[k]||0)+v;});
+    Object.entries(data.technical.bySystem).forEach(([k,v])=>{combined[k]=(combined[k]||0)+v;});
+    if(Object.keys(combined).length>0){
+      renderBar('ch-'+proj+'-area', combined, proj+'-area', 'Items');
+    } else {
+      const c=document.getElementById('ch-'+proj+'-area');
+      if(c) c.parentElement.innerHTML='<div style="color:var(--muted);font-size:11px;text-align:center;padding-top:80px">No system data</div>';
+    }
+  }
+}
+
+function typeCard(title,s,type){
+  const total=s.total[type]||0;
+  const a=s.a[type]||0,b=s.b[type]||0,ur=s.ur[type]||0,c=s.c[type]||0,d=s.d[type]||0,p=s.plan[type]||0;
+  const done=a+b;
+  const pct=total?Math.round(done*100/total):0;
+  const pills=[
+    a?pill('A',a):'',b?pill('B',b):'',ur?pill('UR',ur):'',
+    c?pill('C',c):'',d?pill('D',d):'',p?pill('P',p):''
+  ].filter(Boolean).join('');
+  return `<div class="type-card">
+    <div class="tc-title">${title}</div>
+    <div class="tc-total">${total}</div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+    <div class="tc-sub"><span>${pct}% complete</span><span>${done}/${total}</span></div>
+    <div class="pills">${pills||'<span style="font-size:10px;color:var(--muted)">No data</span>'}</div>
+  </div>`;
+}
+
+function pill(code,count){
+  return `<span class="pill" style="background:${S_BG[code]||'rgba(136,136,136,0.15)'};color:${S_COLOR[code]||'#888'}">${code}: ${count}</span>`;
+}
+
+function summaryRows(s,techLabel){
+  const rows=[
+    {label:'Total Submittals',k:'total',bold:true},
+    {label:'Total Submitted',k:'submitted',bold:false,muted:true},
+    {label:'Approved',k:'a',color:'#86efac'},
+    {label:'Approved as Noted',k:'b',color:'#d4b88a'},
+    {label:'Under Review',k:'ur',color:'#93c5fd'},
+    {label:'Revise & Resubmit',k:'c',color:'#fde047'},
+    {label:'Rejected / Not Approved',k:'d',color:'#fca5a5'},
+    {label:'Returned Unchecked',k:'e',color:'#9ca3af'},
+    {label:'Pending',k:'p',color:'#c4b5fd'},
+    {label:'Planned This Week',k:'plan',color:'#a5f3fc'},
+  ];
+  return rows.map(r=>{
+    const sd=s[r.k]?.sd||0,ms=s[r.k]?.ms||0,ts=s[r.k]?.ts||0;
+    const always=r.bold||r.muted;
+    if(!always&&sd===0&&ms===0&&ts===0) return '';
+    const c=r.color||(r.bold?'var(--gold2)':'var(--muted)');
+    const fw=r.bold?'font-weight:600;color:var(--gold2)':r.muted?'color:var(--muted)':('color:'+c);
+    const fv=(v)=>always?v:(v||'—');
+    return `<tr>
+      <td style="${fw}">${r.label}</td>
+      <td class="num" style="color:${c}">${fv(sd)}</td>
+      <td class="num" style="color:${c}">${fv(ms)}</td>
+      <td class="num" style="color:${c}">${fv(ts)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderComparison(){
+  const cont=document.getElementById('tc-cmp');
+  if(!dhrData&&!penData){cont.innerHTML='<div class="empty">Upload files to see comparison.</div>';return;}
+  const projs=[
+    {id:'dhr',label:'DHR Project',data:dhrData},
+    {id:'pen',label:'Peninsula Project',data:penData}
+  ];
+  let html=`<div class="sec-title">Project Comparison</div><div class="cmp-grid">`;
+  projs.forEach(({label,data})=>{
+    if(!data){html+=`<div class="cmp-card"><div class="cmp-title" style="color:var(--muted)">${label}</div><div class="empty" style="padding:20px">Not loaded</div></div>`;return;}
+    const s=data.summary;
+    const total=s.total.sd+s.total.ms+s.total.ts;
+    const approved=(s.a.sd+s.a.ms+s.a.ts)+(s.b.sd+s.b.ms+s.b.ts);
+    const ur=s.ur.sd+s.ur.ms+s.ur.ts;
+    const pct=total?Math.round(approved*100/total):0;
+    html+=`<div class="cmp-card">
+      <div class="cmp-title">${label}</div>
+      <div class="cmp-kpis">
+        <div><div class="cmp-kv" style="color:var(--gold2)">${total}</div><div class="cmp-kl">Total Docs</div></div>
+        <div><div class="cmp-kv" style="color:#22c55e">${approved}</div><div class="cmp-kl">Approved (A+B)</div></div>
+        <div><div class="cmp-kv" style="color:#3b82f6">${ur}</div><div class="cmp-kl">Under Review</div></div>
+        <div><div class="cmp-kv" style="color:var(--gold)">${pct}%</div><div class="cmp-kl">Completion</div></div>
+      </div>
+      <div class="prog-bar" style="height:5px"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">${approved} of ${total} documents approved</div>
+    </div>`;
+  });
+  html+=`</div>
+  <div class="chart-card">
+    <div class="chart-card-title">Side-by-Side Document Count</div>
+    <div class="chart-wrap" style="height:280px"><canvas id="ch-cmp"></canvas></div>
+  </div>`;
+  cont.innerHTML=html;
+
+  const dT=dhrData?[dhrData.summary.total.sd,dhrData.summary.total.ms,dhrData.summary.total.ts]:[0,0,0];
+  const pT=penData?[penData.summary.total.sd,penData.summary.total.ms,penData.summary.total.ts]:[0,0,0];
+  const ctx=document.getElementById('ch-cmp')?.getContext('2d');
+  if(ctx){
+    charts['cmp']=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:['Shop Drawings','Material Submittals','Technical / MSRA'],
+        datasets:[
+          {label:'DHR',data:dT,backgroundColor:'rgba(184,154,110,0.65)',borderColor:'#b89a6e',borderWidth:1.5},
+          {label:'Peninsula',data:pT,backgroundColor:'rgba(59,130,246,0.45)',borderColor:'#3b82f6',borderWidth:1.5}
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#8a8680',font:{size:11}}},tooltip:{backgroundColor:'rgba(15,15,20,0.95)',titleColor:'#d4b88a',bodyColor:'#e8e4dd'}},
+        scales:{
+          x:{ticks:{color:'#8a8680'},grid:{color:'rgba(184,154,110,0.07)'}},
+          y:{ticks:{color:'#8a8680'},grid:{color:'rgba(184,154,110,0.07)'}}
+        }
+      }
+    });
+  }
+}
+
+// ─── Chart helpers ────────────────────────────────────────────────────────────
+function renderDonut(id,byStatus,key){
+  const ctx=document.getElementById(id)?.getContext('2d');
+  if(!ctx)return;
+  const entries=S_ORDER.filter(k=>byStatus[k]>0).map(k=>[k,byStatus[k]]);
+  Object.keys(byStatus).forEach(k=>{if(!S_ORDER.includes(k)&&byStatus[k]>0)entries.push([k,byStatus[k]]);});
+  if(!entries.length){ctx.canvas.parentElement.innerHTML='<div style="color:var(--muted);font-size:11px;text-align:center;padding-top:80px">No data</div>';return;}
+  if(charts[key])try{charts[key].destroy()}catch(e){}
+  charts[key]=new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:entries.map(([k])=>S_LABEL[k]||k),
+      datasets:[{data:entries.map(([,v])=>v),backgroundColor:entries.map(([k])=>S_BG[k]||'rgba(136,136,136,0.25)'),borderColor:entries.map(([k])=>S_COLOR[k]||'#888'),borderWidth:1.5}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#8a8680',font:{size:10},padding:8,boxWidth:10}},
+        tooltip:{backgroundColor:'rgba(15,15,20,0.95)',titleColor:'#d4b88a',bodyColor:'#e8e4dd'}
+      }
+    }
+  });
+}
+
+function renderBar(id,dataObj,key,unit){
+  const ctx=document.getElementById(id)?.getContext('2d');
+  if(!ctx)return;
+  const entries=Object.entries(dataObj).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(!entries.length){ctx.canvas.parentElement.innerHTML='<div style="color:var(--muted);font-size:11px;text-align:center;padding-top:80px">No data</div>';return;}
+  if(charts[key])try{charts[key].destroy()}catch(e){}
+  charts[key]=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:entries.map(([k])=>k),
+      datasets:[{label:unit,data:entries.map(([,v])=>v),backgroundColor:'rgba(184,154,110,0.45)',borderColor:'#b89a6e',borderWidth:1.5}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(15,15,20,0.95)',titleColor:'#d4b88a',bodyColor:'#e8e4dd'}},
+      scales:{
+        x:{ticks:{color:'#8a8680',font:{size:10}},grid:{color:'rgba(184,154,110,0.07)'}},
+        y:{ticks:{color:'#8a8680',font:{size:10},maxRotation:0},grid:{display:false}}
+      }
+    }
+  });
+}
+
+// ─── Download & Share (Option D) ──────────────────────────────────────────────
+function downloadSharedHTML(){
+  const snap={dhr:dhrData,pen:penData,meta:{at:new Date().toISOString(),hero:customHeroImage}};
+  const tag=`<script>window.__SNAPSHOT__=${JSON.stringify(snap)};<\/script>`;
+  const src=document.documentElement.outerHTML;
+  const out=src.includes('</head>')?src.replace('</head>',tag+'</head>'):tag+src;
+  const a=document.createElement('a');
+  a.href='data:text/html;charset=utf-8,'+encodeURIComponent(out);
+  a.download='DHR_Peninsula_Dashboard_'+new Date().toISOString().slice(0,10)+'.html';
+  a.click();
+}
+
+// ─── Snapshot restore ─────────────────────────────────────────────────────────
+function restoreSnapshot(snap){
+  if(!snap)return;
+  dhrData=snap.dhr||null;
+  penData=snap.pen||null;
+  if(snap.meta?.hero)customHeroImage=snap.meta.hero;
+  const t=snap.meta?.at?new Date(snap.meta.at).toLocaleString():'';
+  if(dhrData)uploadMeta.dhr={name:'DHR-Tracker.xlsx',time:t};
+  if(penData)uploadMeta.pen={name:'Peninsula-Tracker.xlsx',time:t};
+}
+
+if(window.__SNAPSHOT__){
+  restoreSnapshot(window.__SNAPSHOT__);
+  document.addEventListener('DOMContentLoaded',()=>showDashboard());
+}
+</script>
+
+
+</body></html>
